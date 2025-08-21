@@ -1,103 +1,137 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment } from '@react-three/drei';
+import BodyModel from '@/components/BodyModel';
+import PainMarker from '@/components/PainMarker';
+import PainDescriptionModal from '@/components/PainDescriptionModal';
+import SummaryPanel from '@/components/SummaryPanel';
+import Header from '@/components/Header';
+import { usePainStore } from '@/store/painStore';
+import { PainPoint } from '@/types/pain';
+import { modelConfig } from '@/config/modelConfig';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPainPoint, setSelectedPainPoint] = useState<PainPoint | null>(null);
+  const { painPoints, addPainPoint, updatePainPoint } = usePainStore();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const handleBodyClick = (event: { point: { x: number; y: number; z: number } }) => {
+    // Get the intersection point from the click event
+    const point = event.point;
+
+    // Create a new pain point
+    const newPainPoint: PainPoint = {
+      id: Date.now().toString(),
+      position: [point.x, point.y, point.z],
+      radius: 0.1,
+      intensity: 5,
+      type: 'external',
+      quality: 'sharp',
+      onset: 'recent',
+      duration: 'intermittent',
+      aggravatingFactors: [],
+      relievingFactors: [],
+      associatedSymptoms: [],
+      bodyParts: ['Unknown'], // Will be updated by anatomy detection
+      createdAt: new Date().toISOString(),
+    };
+
+    addPainPoint(newPainPoint);
+    setSelectedPainPoint(newPainPoint);
+    setIsModalOpen(true);
+  };
+
+  const handlePainPointClick = (painPoint: PainPoint) => {
+    setSelectedPainPoint(painPoint);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedPainPoint(null);
+  };
+
+  const handlePainPointUpdate = (updatedPainPoint: PainPoint) => {
+    updatePainPoint(updatedPainPoint);
+    setIsModalOpen(false);
+    setSelectedPainPoint(null);
+  };
+
+  return (
+    <div className="h-screen flex flex-col">
+      <Header />
+
+      <main className="flex-1 flex">
+        {/* 3D Model Area - 80% of screen */}
+        <div className="w-4/5 relative">
+          <Canvas
+            camera={{
+              position: modelConfig.cameraSettings.position,
+              fov: modelConfig.cameraSettings.fov,
+            }}
+            className="w-full h-full"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <Environment preset="studio" />
+            <ambientLight intensity={modelConfig.lighting.ambient.intensity} />
+            <directionalLight
+              position={modelConfig.lighting.directional.position}
+              intensity={modelConfig.lighting.directional.intensity}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+            <BodyModel
+              onBodyClick={handleBodyClick}
+              modelPath={modelConfig.modelPath}
+              modelScale={modelConfig.scale}
+              modelPosition={modelConfig.position}
+              modelRotation={modelConfig.rotation}
+              enableShadows={modelConfig.enableShadows}
+            />
+
+            {painPoints.map(painPoint => (
+              <PainMarker
+                key={painPoint.id}
+                painPoint={painPoint}
+                onClick={() => handlePainPointClick(painPoint)}
+              />
+            ))}
+
+            <OrbitControls
+              enablePan={true}
+              enableZoom={true}
+              enableRotate={true}
+              minDistance={modelConfig.cameraSettings.minDistance}
+              maxDistance={modelConfig.cameraSettings.maxDistance}
+            />
+          </Canvas>
+
+          {/* Instructions overlay */}
+          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 max-w-sm">
+            <h3 className="font-semibold text-gray-800 mb-2">How to use:</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Click anywhere on the body to mark pain</li>
+              <li>• Drag to rotate, scroll to zoom</li>
+              <li>• Click existing markers to edit</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Summary Panel - 20% of screen */}
+        <div className="w-1/5 bg-white border-l border-gray-200">
+          <SummaryPanel painPoints={painPoints} />
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      {/* Pain Description Modal */}
+      {isModalOpen && selectedPainPoint && (
+        <PainDescriptionModal
+          painPoint={selectedPainPoint}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onSave={handlePainPointUpdate}
+        />
+      )}
     </div>
   );
 }
