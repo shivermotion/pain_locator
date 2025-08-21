@@ -117,6 +117,35 @@ export default function PainDescriptionModal({
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Auto-detected anatomy */}
+          <div className="medical-card">
+            <div className="text-sm text-gray-700 font-medium mb-2">Detected Location</div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="px-2 py-1 bg-gray-100 rounded">
+                Region: {formData.region || '—'}
+              </span>
+              <span className="px-2 py-1 bg-gray-100 rounded">Side: {formData.side || '—'}</span>
+              <span className="px-2 py-1 bg-gray-100 rounded">
+                Surface: {formData.surface || '—'}
+              </span>
+            </div>
+            {formData.bodyParts?.length > 0 && (
+              <div className="mt-2">
+                <div className="text-xs text-gray-600 mb-1">Likely anatomy:</div>
+                <div className="flex flex-wrap gap-1">
+                  {formData.bodyParts.map(part => (
+                    <span
+                      key={part}
+                      className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200"
+                    >
+                      {part}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
             <div>

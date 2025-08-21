@@ -3,6 +3,10 @@ export type PainQuality = 'sharp' | 'dull' | 'throbbing' | 'burning' | 'aching' 
 export type PainOnset = 'sudden' | 'gradual' | 'recent' | 'chronic';
 export type PainDuration = 'brief' | 'intermittent' | 'continuous' | 'waxing-waning';
 
+export type BodySide = 'left' | 'right' | 'midline';
+export type BodySurface = 'front' | 'back' | 'mid';
+export type BodyRegion = 'head' | 'neck' | 'chest' | 'abdomen' | 'pelvis' | 'upper leg' | 'lower leg';
+
 export interface PainPoint {
   id: string;
   position: [number, number, number]; // [x, y, z] coordinates
@@ -16,6 +20,9 @@ export interface PainPoint {
   relievingFactors: string[];
   associatedSymptoms: string[];
   bodyParts: string[]; // Detected anatomy
+  region?: BodyRegion;
+  side?: BodySide;
+  surface?: BodySurface;
   createdAt: string;
   updatedAt?: string;
 }

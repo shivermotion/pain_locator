@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PainPoint } from '@/types/pain';
@@ -63,6 +64,15 @@ export default function PainMarker({ painPoint, onClick }: PainMarkerProps) {
         <ringGeometry args={[size * 1.2, size * 1.4, 16]} />
         <meshBasicMaterial color={getColor(painPoint.intensity)} transparent opacity={0.3} />
       </mesh>
+
+      {hovered && (
+        <Html distanceFactor={10} position={[0, size * 2, 0]} center>
+          <div className="px-2 py-1 rounded-md bg-black/70 text-white text-xs shadow-md whitespace-nowrap">
+            {painPoint.region || 'region'} • {painPoint.side || 'side'} •{' '}
+            {painPoint.surface || 'surface'}
+          </div>
+        </Html>
+      )}
     </mesh>
   );
 }

@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { PainPoint, PainSummary } from '@/types/pain';
-import { FileText, Copy, Download, Trash2, RefreshCw } from 'lucide-react';
+import { FileText, Copy, Download, Trash2, RefreshCw, Edit2 } from 'lucide-react';
 import { usePainStore } from '@/store/painStore';
 
 interface SummaryPanelProps {
   painPoints: PainPoint[];
+  onEditPainPoint: (painPoint: PainPoint) => void;
 }
 
-export default function SummaryPanel({ painPoints }: SummaryPanelProps) {
+export default function SummaryPanel({ painPoints, onEditPainPoint }: SummaryPanelProps) {
   const [summary, setSummary] = useState<PainSummary | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { removePainPoint, clearAllPainPoints } = usePainStore();
@@ -200,18 +201,31 @@ ${index + 1}. Location: ${point.bodyParts.join(', ')}
                 <div key={point.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-900">Point {index + 1}</span>
-                    <button
-                      onClick={() => removePainPoint(point.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => onEditPainPoint(point)}
+                        className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                        title="Edit pain point"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => removePainPoint(point.id)}
+                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Delete pain point"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-1 text-xs text-gray-600">
                     <div>Intensity: {point.intensity}/10</div>
                     <div>Quality: {point.quality}</div>
                     <div>Type: {point.type}</div>
-                    <div>Location: {point.bodyParts.join(', ')}</div>
+                    <div>
+                      Location: {point.region || '—'} • {point.side || '—'} • {point.surface || '—'}
+                    </div>
+                    <div>Anatomy: {point.bodyParts.join(', ')}</div>
                   </div>
                 </div>
               ))}

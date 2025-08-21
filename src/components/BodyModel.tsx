@@ -11,6 +11,10 @@ interface BodyModelProps {
   modelPosition?: [number, number, number]; // Position of the model
   modelRotation?: [number, number, number]; // Rotation of the model
   enableShadows?: boolean; // Enable shadows for the model
+  onBoundsChange?: (bounds: {
+    min: [number, number, number];
+    max: [number, number, number];
+  }) => void;
 }
 
 // Loading component
@@ -40,6 +44,7 @@ function CustomModel({
   modelPosition = [0, 0, 0],
   modelRotation = [0, 0, 0],
   enableShadows = true,
+  onBoundsChange,
 }: BodyModelProps) {
   const meshRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF(modelPath || '/models/default-body.glb');
@@ -73,6 +78,19 @@ function CustomModel({
       scene.scale.setScalar(modelScale);
       scene.position.set(...modelPosition);
       scene.rotation.set(...modelRotation);
+
+      // Compute world-space bounding box and report it
+      // Defer one frame to ensure matrixWorld is up to date
+      requestAnimationFrame(() => {
+        const box = new THREE.Box3().setFromObject(scene);
+        if (box.isEmpty()) return;
+        const min = box.min;
+        const max = box.max;
+        onBoundsChange?.({
+          min: [min.x, min.y, min.z],
+          max: [max.x, max.y, max.z],
+        });
+      });
     }
   }, [scene, modelScale, modelPosition, modelRotation, enableShadows]);
 

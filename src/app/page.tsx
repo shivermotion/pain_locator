@@ -9,17 +9,35 @@ import PainDescriptionModal from '@/components/PainDescriptionModal';
 import SummaryPanel from '@/components/SummaryPanel';
 import Header from '@/components/Header';
 import { usePainStore } from '@/store/painStore';
-import { PainPoint } from '@/types/pain';
+import { PainPoint, BodyRegion, BodySide, BodySurface } from '@/types/pain';
 import { modelConfig } from '@/config/modelConfig';
+import { getAnatomyForPoint } from '@/utils/anatomyMapping';
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPainPoint, setSelectedPainPoint] = useState<PainPoint | null>(null);
   const { painPoints, addPainPoint, updatePainPoint } = usePainStore();
+  const [modelBounds, setModelBounds] = useState<{
+    min: [number, number, number];
+    max: [number, number, number];
+  } | null>(null);
 
   const handleBodyClick = (event: { point: { x: number; y: number; z: number } }) => {
     // Get the intersection point from the click event
     const point = event.point;
+
+    // Infer anatomy if we have bounds
+    let inferredBodyParts: string[] = ['Unknown'];
+    let inferredRegion: BodyRegion | undefined;
+    let inferredSide: BodySide | undefined;
+    let inferredSurface: BodySurface | undefined;
+    if (modelBounds) {
+      const { bodyParts, region, side, surface } = getAnatomyForPoint(point, modelBounds);
+      inferredBodyParts = bodyParts;
+      inferredRegion = region as BodyRegion;
+      inferredSide = side as BodySide;
+      inferredSurface = surface as BodySurface;
+    }
 
     // Create a new pain point
     const newPainPoint: PainPoint = {
@@ -34,7 +52,10 @@ export default function Home() {
       aggravatingFactors: [],
       relievingFactors: [],
       associatedSymptoms: [],
-      bodyParts: ['Unknown'], // Will be updated by anatomy detection
+      bodyParts: inferredBodyParts,
+      region: inferredRegion,
+      side: inferredSide,
+      surface: inferredSurface,
       createdAt: new Date().toISOString(),
     };
 
@@ -87,6 +108,7 @@ export default function Home() {
               modelPosition={modelConfig.position}
               modelRotation={modelConfig.rotation}
               enableShadows={modelConfig.enableShadows}
+              onBoundsChange={setModelBounds}
             />
 
             {painPoints.map(painPoint => (
@@ -119,7 +141,7 @@ export default function Home() {
 
         {/* Summary Panel - 20% of screen */}
         <div className="w-1/5 bg-white border-l border-gray-200">
-          <SummaryPanel painPoints={painPoints} />
+          <SummaryPanel painPoints={painPoints} onEditPainPoint={handlePainPointClick} />
         </div>
       </main>
 
