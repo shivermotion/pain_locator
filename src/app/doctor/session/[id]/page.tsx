@@ -38,29 +38,48 @@ export default function DoctorSessionPage() {
 
   const modelRef = useRef<THREE.Group>(null as unknown as THREE.Group);
 
-  // Preliminary assessment UI state (mocked for now)
+  // Preliminary assessment UI state
   const [isAssessing, setIsAssessing] = useState(false);
   const [assessment, setAssessment] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const handleGenerateAssessment = () => {
-    setIsAssessing(true);
-    setAssessment(null);
-    setCopied(false);
-    // Mock async generation delay
-    setTimeout(() => {
-      const generated = [
-        'Preliminary Assessment (Mock)',
-        '',
-        `- Overview: ${paintPoints?.length || 0} painted region(s) noted.`,
-        '- Pain characteristics: See patient notes and per-point details.',
-        `- Notes: ${summaryText ? summaryText : 'No patient notes provided.'}`,
-        '',
-        'Disclaimer: This is an auto-generated preview for demonstration only and is not medical advice.',
-      ].join('\n');
-      setAssessment(generated);
+  const handleGenerateAssessment = async () => {
+    try {
+      setIsAssessing(true);
+      setAssessment(null);
+      setCopied(false);
+      console.log('[LLM] Generating assessment…');
+      const res = await fetch('/api/doctor/assess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ summaryText, points: paintPoints || [] }),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to generate assessment');
+      }
+      const data = await res.json();
+      console.log('[LLM] Response', {
+        fallbackUsed: data.fallbackUsed,
+        reason: data.reason,
+        preview: String(data.assessment || '').slice(0, 160),
+      });
+      setAssessment(data.assessment || '');
+    } catch (_) {
+      console.warn('[LLM] Falling back to local assessment');
+      setAssessment(
+        [
+          'Preliminary Assessment (Fallback)',
+          '',
+          `- Overview: ${paintPoints?.length || 0} painted region(s) noted.`,
+          '- Review patient notes and per-point details for context.',
+          '- This is a fallback summary shown because generation failed.',
+          '',
+          'Disclaimer: This is for demonstration only and is not medical advice.',
+        ].join('\n')
+      );
+    } finally {
       setIsAssessing(false);
-    }, 900);
+    }
   };
 
   const handleCopyAssessment = async () => {
