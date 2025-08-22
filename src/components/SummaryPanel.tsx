@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { PainPoint, PainSummary } from '@/types/pain';
-import { FileText, Copy, Download, Trash2, RefreshCw, Edit2 } from 'lucide-react';
+import { FileText, Copy, Download, Trash2, RefreshCw, Edit2, Save } from 'lucide-react';
 import { usePainStore } from '@/store/painStore';
 
 interface SummaryPanelProps {
@@ -18,6 +18,8 @@ export default function SummaryPanel({
 }: SummaryPanelProps) {
   const [summary, setSummary] = useState<PainSummary | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const { removePainPoint, clearAllPainPoints } = usePainStore();
 
   const generateSummary = useCallback(async () => {
@@ -165,6 +167,30 @@ ${index + 1}. Location: ${point.bodyParts.join(', ')}
     URL.revokeObjectURL(url);
   };
 
+  const saveSession = async () => {
+    try {
+      setIsSaving(true);
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          points: painPoints,
+          summaryText: summary?.summaryText || '',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      setSaveMessage('Saved! Your session is now available for your doctor.');
+      // Auto-hide after 3s
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (e) {
+      console.error('Failed to save session', e);
+      setSaveMessage('Something went wrong while saving. Please try again.');
+      setTimeout(() => setSaveMessage(null), 4000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -189,6 +215,18 @@ ${index + 1}. Location: ${point.bodyParts.join(', ')}
           </div>
         </div>
       </div>
+
+      {/* Patient feedback banner */}
+      {saveMessage && (
+        <div className="px-4 pt-3">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm px-3 py-2">
+            {saveMessage}{' '}
+            <a href="/patient/history" className="underline ml-1">
+              View history
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -281,6 +319,14 @@ ${index + 1}. Location: ${point.bodyParts.join(', ')}
 
                 {/* Action buttons */}
                 <div className="flex space-x-2">
+                  <button
+                    onClick={saveSession}
+                    disabled={!summary || isSaving}
+                    className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isSaving ? 'Saving…' : 'Save Session'}</span>
+                  </button>
                   <button
                     onClick={copyToClipboard}
                     className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
