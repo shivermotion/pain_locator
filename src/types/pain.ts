@@ -23,6 +23,10 @@ export interface PainPoint {
   region?: BodyRegion;
   side?: BodySide;
   surface?: BodySurface;
+  strokes?: [number, number, number][][]; // Array of brush strokes (each stroke is an array of points)
+  color?: string; // Paint color assigned to this pain point
+  paintRadius?: number; // Brush size used for this point's painting
+  patientNarrative?: string; // Free-text details from the patient (for clinician/LLM)
   createdAt: string;
   updatedAt?: string;
 }

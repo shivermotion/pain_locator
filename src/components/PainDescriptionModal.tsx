@@ -103,10 +103,12 @@ export default function PainDescriptionModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Pain Description</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Describe Your Pain
+            </h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -119,24 +121,28 @@ export default function PainDescriptionModal({
         <div className="p-6 space-y-6">
           {/* Auto-detected anatomy */}
           <div className="medical-card">
-            <div className="text-sm text-gray-700 font-medium mb-2">Detected Location</div>
+            <div className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-2">
+              Detected Location
+            </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="px-2 py-1 bg-gray-100 rounded">
+              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
                 Region: {formData.region || '—'}
               </span>
-              <span className="px-2 py-1 bg-gray-100 rounded">Side: {formData.side || '—'}</span>
-              <span className="px-2 py-1 bg-gray-100 rounded">
+              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
+                Side: {formData.side || '—'}
+              </span>
+              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
                 Surface: {formData.surface || '—'}
               </span>
             </div>
             {formData.bodyParts?.length > 0 && (
               <div className="mt-2">
-                <div className="text-xs text-gray-600 mb-1">Likely anatomy:</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Likely anatomy:</div>
                 <div className="flex flex-wrap gap-1">
                   {formData.bodyParts.map(part => (
                     <span
                       key={part}
-                      className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200"
+                      className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-xs border border-blue-200 dark:border-blue-800"
                     >
                       {part}
                     </span>
@@ -149,11 +155,13 @@ export default function PainDescriptionModal({
           {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Pain Type</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Type of pain
+              </label>
               <select
                 value={formData.type}
                 onChange={e => handleInputChange('type', e.target.value as PainType)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
                 <option value="external">External (skin/muscle)</option>
                 <option value="internal">Internal (organ/deep tissue)</option>
@@ -161,8 +169,8 @@ export default function PainDescriptionModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Intensity (1-10)
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                How intense is it? (1-10)
               </label>
               <input
                 type="range"
@@ -172,13 +180,17 @@ export default function PainDescriptionModal({
                 onChange={e => handleInputChange('intensity', parseInt(e.target.value))}
                 className="w-full"
               />
-              <div className="text-center text-sm text-gray-600 mt-1">{formData.intensity}/10</div>
+              <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {formData.intensity}/10
+              </div>
             </div>
           </div>
 
           {/* Pain Quality */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Pain Quality</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              How does it feel?
+            </label>
             <div className="grid grid-cols-3 gap-2">
               {PAIN_QUALITIES.map(quality => (
                 <button
@@ -186,8 +198,8 @@ export default function PainDescriptionModal({
                   onClick={() => handleInputChange('quality', quality)}
                   className={`p-2 rounded-lg text-sm transition-colors ${
                     formData.quality === quality
-                      ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-2 border-blue-300 dark:border-blue-600'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {quality.charAt(0).toUpperCase() + quality.slice(1)}
@@ -199,11 +211,13 @@ export default function PainDescriptionModal({
           {/* Onset and Duration */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Onset</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                When did it start?
+              </label>
               <select
                 value={formData.onset}
                 onChange={e => handleInputChange('onset', e.target.value as PainOnset)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
                 {PAIN_ONSETS.map(onset => (
                   <option key={onset} value={onset}>
@@ -214,11 +228,13 @@ export default function PainDescriptionModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                How often/How long?
+              </label>
               <select
                 value={formData.duration}
                 onChange={e => handleInputChange('duration', e.target.value as PainDuration)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
                 {PAIN_DURATIONS.map(duration => (
                   <option key={duration} value={duration}>
@@ -231,8 +247,8 @@ export default function PainDescriptionModal({
 
           {/* Aggravating Factors */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              What makes it worse?
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              What makes the pain worse?
             </label>
             <div className="grid grid-cols-3 gap-2">
               {COMMON_FACTORS.map(factor => (
@@ -241,8 +257,8 @@ export default function PainDescriptionModal({
                   onClick={() => handleFactorToggle(factor, 'aggravating')}
                   className={`p-2 rounded-lg text-sm transition-colors ${
                     formData.aggravatingFactors.includes(factor)
-                      ? 'bg-red-100 text-red-700 border-2 border-red-300'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-2 border-red-300 dark:border-red-600'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {factor}
@@ -253,8 +269,8 @@ export default function PainDescriptionModal({
 
           {/* Relieving Factors */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              What makes it better?
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              What helps the pain?
             </label>
             <div className="grid grid-cols-3 gap-2">
               {COMMON_FACTORS.map(factor => (
@@ -263,8 +279,8 @@ export default function PainDescriptionModal({
                   onClick={() => handleFactorToggle(factor, 'relieving')}
                   className={`p-2 rounded-lg text-sm transition-colors ${
                     formData.relievingFactors.includes(factor)
-                      ? 'bg-green-100 text-green-700 border-2 border-green-300'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-2 border-green-300 dark:border-green-600'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {factor}
@@ -275,9 +291,7 @@ export default function PainDescriptionModal({
 
           {/* Associated Symptoms */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Associated Symptoms
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Other symptoms</label>
             <div className="grid grid-cols-3 gap-2">
               {COMMON_SYMPTOMS.map(symptom => (
                 <button
@@ -285,8 +299,8 @@ export default function PainDescriptionModal({
                   onClick={() => handleSymptomToggle(symptom)}
                   className={`p-2 rounded-lg text-sm transition-colors ${
                     formData.associatedSymptoms.includes(symptom)
-                      ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-2 border-purple-300 dark:border-purple-600'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {symptom}
@@ -294,13 +308,29 @@ export default function PainDescriptionModal({
               ))}
             </div>
           </div>
+
+          {/* Patient Narrative for LLM */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Tell us more (optional)
+            </label>
+            <textarea
+              value={formData.patientNarrative || ''}
+              onChange={e => handleInputChange('patientNarrative', e.target.value)}
+              placeholder="Share anything you think matters: when it happens, what you were doing, past injuries, medicines, triggers, and concerns."
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px] bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              This will be included in your summary to help your care team.
+            </p>
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
           >
             Cancel
           </button>
