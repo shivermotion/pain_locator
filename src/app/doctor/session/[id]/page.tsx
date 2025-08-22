@@ -38,22 +38,68 @@ export default function DoctorSessionPage() {
 
   const modelRef = useRef<THREE.Group>(null as unknown as THREE.Group);
 
+  // Preliminary assessment UI state (mocked for now)
+  const [isAssessing, setIsAssessing] = useState(false);
+  const [assessment, setAssessment] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleGenerateAssessment = () => {
+    setIsAssessing(true);
+    setAssessment(null);
+    setCopied(false);
+    // Mock async generation delay
+    setTimeout(() => {
+      const generated = [
+        'Preliminary Assessment (Mock)',
+        '',
+        `- Overview: ${paintPoints?.length || 0} painted region(s) noted.`,
+        '- Pain characteristics: See patient notes and per-point details.',
+        `- Notes: ${summaryText ? summaryText : 'No patient notes provided.'}`,
+        '',
+        'Disclaimer: This is an auto-generated preview for demonstration only and is not medical advice.',
+      ].join('\n');
+      setAssessment(generated);
+      setIsAssessing(false);
+    }, 900);
+  };
+
+  const handleCopyAssessment = async () => {
+    if (!assessment) return;
+    try {
+      await navigator.clipboard.writeText(assessment);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (_) {
+      // no-op
+    }
+  };
+
   const timelineData = useMemo(() => {
     if (patient) {
-      const byDay = new Map<string, number>();
-      patient.sessions.forEach(s => {
-        const d = new Date(s.createdAt).toISOString().slice(0, 10);
-        byDay.set(d, (byDay.get(d) || 0) + 1);
-      });
-      return Array.from(byDay.entries())
-        .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-        .map(([date, count]) => ({ date, count }));
+      return patient.sessions
+        .map(s => {
+          const pts = (s as any).painPoints as Array<{ intensity: number }> | undefined;
+          const avg =
+            pts && pts.length > 0
+              ? pts.reduce((sum, p) => sum + (p.intensity || 0), 0) / pts.length
+              : 0;
+          return {
+            date: new Date(s.createdAt).toISOString().slice(0, 10),
+            intensity: Math.round(avg * 10) / 10,
+          };
+        })
+        .sort((a, b) => (a.date < b.date ? -1 : 1));
     }
     if (liveRecord?.createdAt) {
       const d = new Date(liveRecord.createdAt).toISOString().slice(0, 10);
-      return [{ date: d, count: 1 }];
+      const pts = (liveRecord as any)?.painData?.points as Array<{ intensity: number }> | undefined;
+      const avg =
+        pts && pts.length > 0
+          ? pts.reduce((sum, p) => sum + (p.intensity || 0), 0) / pts.length
+          : 0;
+      return [{ date: d, intensity: Math.round(avg * 10) / 10 }];
     }
-    return [] as { date: string; count: number }[];
+    return [] as { date: string; intensity: number }[];
   }, [patient, liveRecord]);
 
   // Resolve display + paint data
@@ -121,14 +167,16 @@ export default function DoctorSessionPage() {
           </div>
         </div>
         <div className="medical-card">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Sessions over time</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            Average intensity over time
+          </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={timelineData} margin={{ left: -20, right: 10 }}>
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} domain={[0, 10]} />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} dot />
+                <Line type="monotone" dataKey="intensity" stroke="#3b82f6" strokeWidth={2} dot />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -138,6 +186,51 @@ export default function DoctorSessionPage() {
       <div className="medical-card">
         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Patient notes / summary</div>
         <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{summaryText}</div>
+      </div>
+
+      {/* Preliminary Assessment (Mock) */}
+      <div className="medical-card">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+              Preliminary assessment
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Generate a quick AI-style preview based on this session.
+            </div>
+          </div>
+          <button
+            onClick={handleGenerateAssessment}
+            disabled={isAssessing}
+            className="px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {isAssessing ? 'Generating…' : 'Generate'}
+          </button>
+        </div>
+
+        {assessment && (
+          <div className="space-y-3">
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded p-3">
+              <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                {assessment}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopyAssessment}
+                className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+              <button
+                onClick={handleGenerateAssessment}
+                className="px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Regenerate
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
