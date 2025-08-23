@@ -2,15 +2,9 @@
 // Copy this file to config.ts and fill in your API keys
 
 export const config = {
-  // Optional: Grok API for enhanced AI summaries
-  // Get your API key from https://x.ai/api
-  grokApiKey: process.env.GROK_API_KEY || '',
-  
-  // Optional: OpenAI API as alternative for AI summaries
-  openaiApiKey: process.env.OPENAI_API_KEY || '',
-  
-  // Optional: Hugging Face API for alternative LLM models
-  huggingfaceToken: process.env.HUGGINGFACE_TOKEN || '',
+  // Groq API for AI assessments
+  // Get your API key from https://console.groq.com/
+  groqApiKey: process.env.GROQ_API_KEY || '',
   
   // Application Configuration
   appName: process.env.NEXT_PUBLIC_APP_NAME || 'Pain Locator',

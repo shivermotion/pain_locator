@@ -133,15 +133,7 @@ export default function DoctorSessionPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{displayName}</h1>
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-600 dark:text-gray-400">{displayEmail}</div>
-          <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            Sign out
-          </button>
-        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">{displayEmail}</div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

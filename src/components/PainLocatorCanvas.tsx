@@ -126,7 +126,6 @@ export default function PainLocatorCanvas() {
 
   return (
     <div className="h-screen flex flex-col">
-      <Header />
       <main className="flex-1 flex">
         <div className="w-4/5 relative">
           <Canvas

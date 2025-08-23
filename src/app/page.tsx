@@ -18,7 +18,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-3xl w-full grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link href="/patient/dashboard" className="medical-card block">

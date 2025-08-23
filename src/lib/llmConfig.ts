@@ -1,4 +1,4 @@
-// LLM Configuration for Pain Locator
+// LLM Configuration for Pain Locator (Groq-only)
 interface PainPointLite {
   bodyParts?: string[];
   intensity?: number;
@@ -7,18 +7,18 @@ interface PainPointLite {
   duration?: string;
 }
 
-type HFTextGenArray = Array<{ generated_text?: string }>;
-
 export const LLM_CONFIG = {
-  // Hugging Face text generation model (definitely available on free tier)
-  modelId: 'gpt2',
-  apiUrl: 'https://api-inference.huggingface.co/models/gpt2',
+  // Groq API configuration
+  groq: {
+    apiUrl: 'https://api.groq.com/openai/v1/chat/completions',
+    model: 'llama3-8b-8192', // Fast, reliable model
+    apiKey: process.env.GROQ_API_KEY,
+  },
   
   // Generation parameters
   generationParams: {
-    max_new_tokens: 300,
+    max_tokens: 300,
     temperature: 0.2,
-    return_full_text: false,
   },
   
   // System prompts for different use cases
@@ -35,12 +35,10 @@ export const LLM_CONFIG = {
     // patientSummary: '...',
     // followUpQuestions: '...',
   },
-  
-  // Environment variables
-  env: {
-    token: process.env.HUGGINGFACE_TOKEN,
-  },
 } as const;
+
+// Debug: Log the API key on module load
+console.log('[LLM] Config loaded with Groq key:', process.env.GROQ_API_KEY ? `${process.env.GROQ_API_KEY.slice(0, 8)}...` : 'missing');
 
 // Helper function to build assessment prompt
 export function buildAssessmentPrompt(points: PainPointLite[], summaryText: string): string {
@@ -65,51 +63,60 @@ export function buildAssessmentPrompt(points: PainPointLite[], summaryText: stri
   ].join('\n');
 }
 
-// Helper function to call Hugging Face API
-export async function callHuggingFace(promptText: string): Promise<string> {
-  const token = LLM_CONFIG.env.token;
-  console.log('[LLM] Token check:', token ? `present (${token.slice(0, 8)}...)` : 'missing');
-  console.log('[LLM] Using model:', LLM_CONFIG.modelId, 'url:', LLM_CONFIG.apiUrl);
-  if (!token) {
-    throw new Error('HUGGINGFACE_TOKEN not configured');
-  }
+// Helper function to call Groq API
+export async function callLLM(promptText: string): Promise<string> {
+  console.log('[LLM] 🚀 Starting LLM request...');
+  console.log('[LLM] 📝 Prompt length:', promptText.length, 'characters');
+  console.log('[LLM] 📝 Prompt preview:', promptText.slice(0, 200) + '...');
   
-  const response = await fetch(LLM_CONFIG.apiUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      inputs: promptText,
-      parameters: LLM_CONFIG.generationParams,
-    }),
-  });
+  // Try Groq first
+  const groqKey = LLM_CONFIG.groq.apiKey;
+  if (groqKey) {
+    console.log('[LLM] 🔄 Trying Groq API with model:', LLM_CONFIG.groq.model);
+    try {
+      const requestBody = {
+        model: LLM_CONFIG.groq.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful medical assistant generating preliminary assessments for clinicians.'
+          },
+          {
+            role: 'user',
+            content: promptText
+          }
+        ],
+        max_tokens: LLM_CONFIG.generationParams.max_tokens,
+        temperature: LLM_CONFIG.generationParams.temperature,
+      };
+      
+      console.log('[LLM] 📤 Sending request to Groq...');
+      const response = await fetch(LLM_CONFIG.groq.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error('[LLM] HF error body:', errText.slice(0, 400));
-    throw new Error(`HF error: ${response.status} ${errText}`);
-  }
-
-  const data = await response.json();
-  
-  // Handle different response formats
-  if (Array.isArray(data)) {
-    const arr = data as HFTextGenArray;
-    if (arr.length && typeof arr[0]?.generated_text === 'string') {
-      return String(arr[0].generated_text);
+      if (response.ok) {
+        const data = await response.json();
+        const responseText = data.choices[0]?.message?.content || 'No response generated';
+        console.log('[LLM] ✅ Groq success!');
+        console.log('[LLM] 📥 Response length:', responseText.length, 'characters');
+        console.log('[LLM] 📥 Response preview:', responseText.slice(0, 300) + '...');
+        return responseText;
+      } else {
+        const errorText = await response.text();
+        console.error('[LLM] ❌ Groq failed:', response.status, errorText.slice(0, 200));
+      }
+    } catch (error) {
+      console.error('[LLM] ❌ Groq error:', error);
     }
   }
-  if (typeof data === 'object' && data && 'generated_text' in (data as Record<string, unknown>)) {
-    const maybe = data as Record<string, unknown>;
-    const val = maybe['generated_text'];
-    if (typeof val === 'string') return val;
-  }
-  if (typeof data === 'string') {
-    return data;
-  }
   
-  // Fallback for unexpected formats
-  return JSON.stringify(data);
+  // If all fail, throw error
+  console.error('[LLM] 💥 All LLM services failed to respond');
+  throw new Error('All LLM services failed to respond');
 }

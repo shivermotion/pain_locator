@@ -4,7 +4,6 @@ import { useParams, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import Link from 'next/link';
 import { mockPatients } from '@/lib/mockPatients';
-import { signOut } from 'next-auth/react';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -20,14 +19,8 @@ export default function DoctorPatientPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div>
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{email}</h1>
-        <button
-          onClick={() => signOut({ callbackUrl: '/' })}
-          className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-        >
-          Sign out
-        </button>
       </div>
       <div className="medical-card">
         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Sessions</div>

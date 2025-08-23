@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/authOptions';
-import { buildAssessmentPrompt, callHuggingFace, LLM_CONFIG } from '@/lib/llmConfig';
+import { buildAssessmentPrompt, callLLM, LLM_CONFIG } from '@/lib/llmConfig';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = (await getServerSession(req, res, authOptions as any)) as any;
@@ -47,14 +47,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    if (!LLM_CONFIG.env.token) {
-      console.log('[LLM] No HUGGINGFACE_TOKEN configured; serving fallback response');
+    if (!LLM_CONFIG.groq.apiKey) {
+      console.log('[LLM] No GROQ_API_KEY configured; serving fallback response');
       const assessment = buildMockAssessment();
-      res.status(200).json({ assessment, fallbackUsed: true, reason: 'no_token' });
+      res.status(200).json({ assessment, fallbackUsed: true, reason: 'no_groq_key' });
       return;
     }
 
-    const assessment = await callHuggingFace(prompt);
+    const assessment = await callLLM(prompt);
     try {
       console.log(
         `[LLM] Response received (fallback=false) chars=${assessment.length} preview=` +
