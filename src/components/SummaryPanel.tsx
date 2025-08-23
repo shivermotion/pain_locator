@@ -318,25 +318,25 @@ ${index + 1}. Location: ${point.bodyParts.join(', ')}
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex space-x-2">
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={saveSession}
                     disabled={!summary || isSaving}
-                    className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                    className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
                     <span>{isSaving ? 'Saving…' : 'Save Session'}</span>
                   </button>
                   <button
                     onClick={copyToClipboard}
-                    className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <Copy className="w-4 h-4" />
                     <span>Copy</span>
                   </button>
                   <button
                     onClick={downloadSummary}
-                    className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download</span>

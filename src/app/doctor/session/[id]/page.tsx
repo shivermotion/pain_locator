@@ -1,12 +1,10 @@
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
-import { signOut } from 'next-auth/react';
+import { useMemo, useState, useRef } from 'react';
 import { mockPatients } from '@/lib/mockPatients';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import * as THREE from 'three';
-import { useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
 import BodyModel from '@/components/BodyModel';
@@ -14,6 +12,9 @@ import PaintReplayer from '@/components/PaintReplayer';
 import { modelConfig } from '@/config/modelConfig';
 import useSWR from 'swr';
 const fetcher = (url: string) => fetch(url).then(r => r.json());
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function DoctorSessionPage() {
   const params = useParams();
@@ -64,6 +65,7 @@ export default function DoctorSessionPage() {
         preview: String(data.assessment || '').slice(0, 160),
       });
       setAssessment(data.assessment || '');
+      toast.success('Assessment generated');
     } catch (_) {
       console.warn('[LLM] Falling back to local assessment');
       setAssessment(
@@ -77,6 +79,7 @@ export default function DoctorSessionPage() {
           'Disclaimer: This is for demonstration only and is not medical advice.',
         ].join('\n')
       );
+      toast.error('Generation failed. Showing fallback.');
     } finally {
       setIsAssessing(false);
     }
@@ -88,8 +91,9 @@ export default function DoctorSessionPage() {
       await navigator.clipboard.writeText(assessment);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      toast.success('Assessment copied');
     } catch (_) {
-      // no-op
+      toast.error('Copy failed');
     }
   };
 
@@ -130,119 +134,113 @@ export default function DoctorSessionPage() {
   if (!displayEmail || !paintPoints) return <div className="p-6">Not found</div>;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{displayName}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
         <div className="text-sm text-gray-600 dark:text-gray-400">{displayEmail}</div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="medical-card lg:col-span-2">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            Painted areas (selected session)
-          </div>
-          <div className="h-80">
-            <Canvas
-              camera={{
-                position: modelConfig.cameraSettings.position,
-                fov: modelConfig.cameraSettings.fov,
-              }}
-              className="w-full h-full"
-            >
-              <Environment preset="studio" />
-              <ambientLight intensity={modelConfig.lighting.ambient.intensity} />
-              <directionalLight
-                position={modelConfig.lighting.directional.position}
-                intensity={modelConfig.lighting.directional.intensity}
-              />
-              <group ref={modelRef as any}>
-                <BodyModel
-                  onBodyClick={() => {}}
-                  modelPath={modelConfig.modelPath}
-                  modelScale={modelConfig.scale}
-                  modelPosition={modelConfig.position}
-                  modelRotation={modelConfig.rotation}
-                  enableShadows={false}
-                  modelRef={modelRef as any}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="medical-card lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Painted areas (selected session)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Canvas
+                camera={{
+                  position: modelConfig.cameraSettings.position,
+                  fov: modelConfig.cameraSettings.fov,
+                }}
+                className="w-full h-full"
+              >
+                <Environment preset="studio" />
+                <ambientLight intensity={modelConfig.lighting.ambient.intensity} />
+                <directionalLight
+                  position={modelConfig.lighting.directional.position}
+                  intensity={modelConfig.lighting.directional.intensity}
                 />
-              </group>
-              <PaintReplayer modelRef={modelRef as any} painPoints={paintPoints as any} />
-              <OrbitControls
-                enablePan
-                enableZoom
-                enableRotate
-                minDistance={modelConfig.cameraSettings.minDistance}
-                maxDistance={modelConfig.cameraSettings.maxDistance}
-              />
-            </Canvas>
-          </div>
-        </div>
-        <div className="medical-card">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            Average intensity over time
-          </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timelineData} margin={{ left: -20, right: 10 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} domain={[0, 10]} />
-                <Tooltip />
-                <Line type="monotone" dataKey="intensity" stroke="#3b82f6" strokeWidth={2} dot />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="medical-card">
-        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Patient notes / summary</div>
-        <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{summaryText}</div>
-      </div>
-
-      {/* Preliminary Assessment (Mock) */}
-      <div className="medical-card">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <div className="text-lg font-semibold text-gray-900 dark:text-white">
-              Preliminary assessment
+                <group ref={modelRef as any}>
+                  <BodyModel
+                    onBodyClick={() => {}}
+                    modelPath={modelConfig.modelPath}
+                    modelScale={modelConfig.scale}
+                    modelPosition={modelConfig.position}
+                    modelRotation={modelConfig.rotation}
+                    enableShadows={false}
+                    modelRef={modelRef as any}
+                  />
+                </group>
+                <PaintReplayer modelRef={modelRef as any} painPoints={paintPoints as any} />
+                <OrbitControls
+                  enablePan
+                  enableZoom
+                  enableRotate
+                  minDistance={modelConfig.cameraSettings.minDistance}
+                  maxDistance={modelConfig.cameraSettings.maxDistance}
+                />
+              </Canvas>
             </div>
+          </CardContent>
+        </Card>
+        <Card className="medical-card">
+          <CardHeader>
+            <CardTitle>Average intensity over time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timelineData} margin={{ left: -20, right: 10 }}>
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} allowDecimals={false} domain={[0, 10]} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="intensity" stroke="#3b82f6" strokeWidth={2} dot />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="medical-card">
+        <CardHeader>
+          <CardTitle>Patient notes / summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{summaryText}</div>
+        </CardContent>
+      </Card>
+
+      <Card className="medical-card">
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Preliminary assessment</CardTitle>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Generate a quick AI-style preview based on this session.
             </div>
           </div>
-          <button
-            onClick={handleGenerateAssessment}
-            disabled={isAssessing}
-            className="px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
-          >
+          <Button onClick={handleGenerateAssessment} disabled={isAssessing}>
             {isAssessing ? 'Generating…' : 'Generate'}
-          </button>
-        </div>
-
-        {assessment && (
-          <div className="space-y-3">
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded p-3">
-              <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                {assessment}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {assessment && (
+            <div className="space-y-3">
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded p-3">
+                <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                  {assessment}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={handleCopyAssessment}>
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+                <Button onClick={handleGenerateAssessment}>Regenerate</Button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleCopyAssessment}
-                className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                {copied ? 'Copied' : 'Copy'}
-              </button>
-              <button
-                onClick={handleGenerateAssessment}
-                className="px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
-              >
-                Regenerate
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

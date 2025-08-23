@@ -9,11 +9,13 @@ import TexturePainter from '@/components/TexturePainter';
 import PaintReplayer from '@/components/PaintReplayer';
 import PainDescriptionModal from '@/components/PainDescriptionModal';
 import SummaryPanel from '@/components/SummaryPanel';
-import Header from '@/components/Header';
 import { usePainStore } from '@/store/painStore';
 import { PainPoint, BodyRegion, BodySide, BodySurface } from '@/types/pain';
 import { modelConfig } from '@/config/modelConfig';
 import { getAnatomyForPoint } from '@/utils/anatomyMapping';
+import { toast } from 'sonner';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 export default function PainLocatorCanvas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -122,12 +124,13 @@ export default function PainLocatorCanvas() {
     updatePainPoint(merged);
     setIsModalOpen(false);
     setSelectedPainPoint(null);
+    toast.success('Pain details saved');
   };
 
   return (
     <div className="h-screen flex flex-col">
       <main className="flex-1 flex">
-        <div className="w-4/5 relative">
+        <div className="flex-1 relative">
           <Canvas
             camera={{
               position: modelConfig.cameraSettings.position,
@@ -189,7 +192,7 @@ export default function PainLocatorCanvas() {
           </Canvas>
 
           {isPainting && (
-            <div className="absolute top-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200 dark:border-gray-700 w-64 space-y-3">
+            <div className="hidden md:block absolute top-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200 dark:border-gray-700 w-64 space-y-3">
               <div className="font-semibold text-gray-800 dark:text-white">Painting</div>
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
@@ -244,7 +247,7 @@ export default function PainLocatorCanvas() {
             </div>
           )}
 
-          <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg p-4 max-w-sm">
+          <div className="hidden md:block absolute top-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg p-4 max-w-sm">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-gray-800 dark:text-white">How to use:</h3>
               <button
@@ -266,7 +269,7 @@ export default function PainLocatorCanvas() {
           </div>
         </div>
 
-        <div className="w-1/5 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
+        <div className="hidden md:block md:w-80 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
           <SummaryPanel
             painPoints={painPoints}
             onEditPainPoint={handlePainPointClick}
@@ -288,6 +291,108 @@ export default function PainLocatorCanvas() {
           />
         </div>
       </main>
+
+      {/* Mobile actions bar */}
+      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] z-50">
+        <div className="glass-panel p-3 rounded-xl flex items-center justify-between">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            {isPainting ? 'Painting' : 'Explore'}
+          </div>
+          <div className="flex gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="secondary" size="sm">
+                  Controls
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
+                <div className="space-y-4 pt-4">
+                  <div className="font-medium text-gray-900 dark:text-white">Brush settings</div>
+                  <div>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Brush size
+                    </label>
+                    <input
+                      type="range"
+                      min={0.05}
+                      max={0.5}
+                      step={0.01}
+                      value={brushSize}
+                      onChange={e => setBrushSize(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
+                      {brushSize.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                    <span>Paint color</span>
+                    <span className="inline-flex items-center">
+                      <span
+                        className="inline-block w-4 h-4 rounded border border-gray-300 dark:border-gray-600"
+                        style={{ backgroundColor: selectedPainPoint?.color || brushColor }}
+                      />
+                      <span className="ml-2">This pain area&apos;s color</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 pt-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        if (!selectedPainPoint) return;
+                        undoLastStroke(selectedPainPoint.id);
+                      }}
+                    >
+                      Undo stroke
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (selectedPainPoint) setIsModalOpen(true);
+                        setIsPainting(false);
+                      }}
+                    >
+                      Finish
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setIsPainting(false)}>
+                      Exit
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="sm">Summary</Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[70vh] overflow-y-auto">
+                <div className="pt-4">
+                  <SummaryPanel
+                    painPoints={painPoints}
+                    onEditPainPoint={handlePainPointClick}
+                    onFocusPainPoint={p => {
+                      const controls = controlsRef.current;
+                      if (controls && controls.object) {
+                        const camera = controls.object as THREE.Camera;
+                        const target = new THREE.Vector3(...p.position);
+                        const dir = new THREE.Vector3().subVectors(camera.position, target);
+                        const distance = 2.5;
+                        if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1);
+                        dir.normalize().multiplyScalar(distance);
+                        const newPos = new THREE.Vector3().addVectors(target, dir);
+                        camera.position.copy(newPos);
+                        controls.target.copy(target);
+                        controls.update();
+                      }
+                    }}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </div>
 
       {isModalOpen && selectedPainPoint && (
         <PainDescriptionModal

@@ -26,7 +26,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'PUT') {
     try {
       const body = req.body || {};
-      const incoming: PatientProfile = { ...(readProfile(email) || { email }), ...body, email };
+      
+      // Parse comma-separated lists
+      const parseList = (input: unknown): string[] | undefined => {
+        if (Array.isArray(input)) return input.map(String).map(s => s.trim()).filter(Boolean);
+        if (typeof input === 'string') {
+          const sep = input.includes('\n') ? '\n' : ',';
+          return input.split(sep).map(s => s.trim()).filter(Boolean);
+        }
+        return undefined;
+      };
+
+      const incoming: PatientProfile = { 
+        ...(readProfile(email) || { email }), 
+        ...body, 
+        email,
+        pastConditions: parseList(body.pastConditions) || [],
+        surgeries: parseList(body.surgeries) || [],
+        currentMedications: parseList(body.currentMedications) || [],
+        allergies: parseList(body.allergies) || [],
+      };
+      
       const saved = writeProfile(incoming);
       res.status(200).json(saved);
       return;

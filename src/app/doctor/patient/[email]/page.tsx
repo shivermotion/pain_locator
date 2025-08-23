@@ -1,9 +1,12 @@
 'use client';
 
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import Link from 'next/link';
 import { mockPatients } from '@/lib/mockPatients';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -18,28 +21,29 @@ export default function DoctorPatientPage() {
   const sessions = live.length > 0 ? live : mock?.sessions || [];
 
   return (
-    <div className="p-6 space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{email}</h1>
-      </div>
-      <div className="medical-card">
-        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Sessions</div>
-        <div className="flex flex-wrap gap-2">
-          {sessions.length > 0 ? (
-            sessions.map((s: any) => (
-              <Link
-                key={s.id}
-                href={`/doctor/session/${mock?.id || 'live'}?sid=${s.id}`}
-                className="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded text-sm"
-              >
-                {new Date(s.createdAt).toLocaleDateString()}
-              </Link>
-            ))
-          ) : (
-            <span className="text-xs text-gray-500 dark:text-gray-400">No sessions</span>
-          )}
-        </div>
-      </div>
+    <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{email}</h1>
+
+      <Card className="medical-card">
+        <CardHeader>
+          <CardTitle>Sessions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {sessions.length > 0 ? (
+              sessions.map((s: any) => (
+                <Button asChild key={s.id} variant="secondary" className="text-sm">
+                  <Link href={`/doctor/session/${mock?.id || 'live'}?sid=${s.id}`}>
+                    {new Date(s.createdAt).toLocaleDateString()}
+                  </Link>
+                </Button>
+              ))
+            ) : (
+              <span className="text-xs text-gray-500 dark:text-gray-400">No sessions</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
