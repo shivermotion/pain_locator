@@ -14,7 +14,7 @@ export const modelConfig = {
   
   // Camera settings for your model
   cameraSettings: {
-    position: [0, 0, 5] as [number, number, number],
+    position: [0, 0, 7] as [number, number, number],
     fov: 50,
     minDistance: 2,
     maxDistance: 10,
