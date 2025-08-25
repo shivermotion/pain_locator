@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { DarkModeProvider } from '@/contexts/DarkModeContext';
+import Providers from '@/components/Providers';
+import Header from '@/components/Header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,11 +21,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <DarkModeProvider>
-          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-            {children}
+        <a href="#main" className="skip-link">
+          Skip to main content
+        </a>
+        <Providers>
+          <div className="min-h-screen bg-gradient-to-br from-blue-50/70 to-indigo-100/70 dark:from-gray-900 dark:to-gray-800">
+            <Header />
+            <main id="main" role="main" className="focus:outline-none focus:ring-0">
+              {children}
+            </main>
           </div>
-        </DarkModeProvider>
+        </Providers>
       </body>
     </html>
   );

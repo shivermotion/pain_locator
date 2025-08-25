@@ -2,8 +2,22 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { PainPoint, PainSummary } from '@/types/pain';
-import { FileText, Copy, Download, Trash2, RefreshCw, Edit2 } from 'lucide-react';
+import {
+  FileText,
+  Copy,
+  Download,
+  Trash2,
+  RefreshCw,
+  Edit2,
+  Save,
+  AlertCircle,
+} from 'lucide-react';
 import { usePainStore } from '@/store/painStore';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
 interface SummaryPanelProps {
   painPoints: PainPoint[];
@@ -18,6 +32,8 @@ export default function SummaryPanel({
 }: SummaryPanelProps) {
   const [summary, setSummary] = useState<PainSummary | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const { removePainPoint, clearAllPainPoints } = usePainStore();
 
   const generateSummary = useCallback(async () => {
@@ -113,9 +129,10 @@ export default function SummaryPanel({
     if (summary?.summaryText) {
       try {
         await navigator.clipboard.writeText(summary.summaryText);
-        // You could add a toast notification here
+        toast.success('Summary copied to clipboard');
       } catch (error) {
         console.error('Failed to copy to clipboard:', error);
+        toast.error('Failed to copy to clipboard');
       }
     }
   };
@@ -165,136 +182,267 @@ ${index + 1}. Location: ${point.bodyParts.join(', ')}
     URL.revokeObjectURL(url);
   };
 
+  const saveSession = async () => {
+    try {
+      setIsSaving(true);
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          points: painPoints,
+          summaryText: summary?.summaryText || '',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      setSaveMessage('Saved! Your session is now available for your doctor.');
+      // Auto-hide after 3s
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (e) {
+      console.error('Failed to save session', e);
+      setSaveMessage('Something went wrong while saving. Please try again.');
+      setTimeout(() => setSaveMessage(null), 4000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-gray-50/50 dark:bg-gray-900/50">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pain Summary</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pain Summary</h2>
           <div className="flex items-center space-x-2">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={generateSummary}
               disabled={isGenerating || painPoints.length === 0}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              className="text-gray-600 hover:text-gray-900"
             >
               <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={clearAllPainPoints}
               disabled={painPoints.length === 0}
-              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {painPoints.length === 0 ? (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No pain points recorded</p>
-            <p className="text-sm">Click on the body model to add pain markers</p>
+      {/* Patient feedback banner */}
+      {saveMessage && (
+        <div className="px-6 pt-4">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 text-sm px-4 py-3 flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4" />
+            {saveMessage}{' '}
+            <a href="/patient/history" className="underline ml-1">
+              View history
+            </a>
           </div>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {painPoints.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent className="pt-6">
+              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No pain points recorded
+              </p>
+              <p className="text-gray-500 dark:text-gray-400">
+                Click on the body model to add pain markers
+              </p>
+            </CardContent>
+          </Card>
         ) : (
           <>
             {/* Pain Points List */}
-            <div className="space-y-3">
-              <h3 className="font-medium text-gray-900 dark:text-white">
-                Your pain entries ({painPoints.length})
-              </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Pain Entries
+                </h3>
+                <Badge
+                  variant="secondary"
+                  className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                >
+                  {painPoints.length}
+                </Badge>
+              </div>
               {painPoints.map((point, index) => (
-                <div
+                <Card
                   key={point.id}
-                  className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="cursor-pointer hover:shadow-md transition-all duration-200 border-gray-200 dark:border-gray-700"
                   onClick={() => onFocusPainPoint(point)}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      Point {index + 1}
-                    </span>
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          onEditPainPoint(point);
-                        }}
-                        className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                        title="Edit pain point"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          // Clear painted colors on the mesh when deleting
-                          // We signal via a custom event the painter can listen to (optional future improvement)
-                          removePainPoint(point.id);
-                        }}
-                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                        title="Delete pain point"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Pain Point {index + 1}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {point.intensity}/10
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={e => {
+                            e.stopPropagation();
+                            onEditPainPoint(point);
+                          }}
+                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          title="Edit pain point"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={e => {
+                            e.stopPropagation();
+                            // Clear painted colors on the mesh when deleting
+                            // We signal via a custom event the painter can listen to (optional future improvement)
+                            removePainPoint(point.id);
+                          }}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          title="Delete pain point"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                    <div>Type: {point.type}</div>
-                    <div>Intensity: {point.intensity}/10</div>
-                    <div>Quality: {point.quality}</div>
-                    <div>Onset: {point.onset}</div>
-                    <div>Duration: {point.duration}</div>
-                    <div>
-                      Location: {point.region || '—'} • {point.side || '—'} • {point.surface || '—'}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Type:</span>
+                        <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                          {point.type}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Quality:</span>
+                        <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                          {point.quality}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Onset:</span>
+                        <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                          {point.onset}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Duration:</span>
+                        <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                          {point.duration}
+                        </span>
+                      </div>
                     </div>
-                    <div>Anatomy: {point.bodyParts.join(', ')}</div>
-                    {point.aggravatingFactors.length > 0 && (
-                      <div>Aggravating: {point.aggravatingFactors.join(', ')}</div>
-                    )}
-                    {point.relievingFactors.length > 0 && (
-                      <div>Relieving: {point.relievingFactors.join(', ')}</div>
-                    )}
-                    {point.associatedSymptoms.length > 0 && (
-                      <div>Symptoms: {point.associatedSymptoms.join(', ')}</div>
-                    )}
-                    {point.patientNarrative && (
-                      <div className="text-gray-700 dark:text-gray-300">
-                        Notes: {point.patientNarrative}
+
+                    <div className="mt-3">
+                      <div className="text-gray-500 dark:text-gray-400 text-sm mb-1">Location:</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {point.region || '—'} • {point.side || '—'} • {point.surface || '—'}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {point.bodyParts.join(', ')}
+                      </div>
+                    </div>
+
+                    {(point.aggravatingFactors.length > 0 ||
+                      point.relievingFactors.length > 0 ||
+                      point.associatedSymptoms.length > 0) && (
+                      <div className="mt-3 space-y-2">
+                        {point.aggravatingFactors.length > 0 && (
+                          <div>
+                            <div className="text-gray-500 dark:text-gray-400 text-sm">
+                              Aggravating factors:
+                            </div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {point.aggravatingFactors.join(', ')}
+                            </div>
+                          </div>
+                        )}
+                        {point.relievingFactors.length > 0 && (
+                          <div>
+                            <div className="text-gray-500 dark:text-gray-400 text-sm">
+                              Relieving factors:
+                            </div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {point.relievingFactors.join(', ')}
+                            </div>
+                          </div>
+                        )}
+                        {point.associatedSymptoms.length > 0 && (
+                          <div>
+                            <div className="text-gray-500 dark:text-gray-400 text-sm">
+                              Associated symptoms:
+                            </div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {point.associatedSymptoms.join(', ')}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                </div>
+
+                    {point.patientNarrative && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-gray-500 dark:text-gray-400 text-sm mb-1">
+                          Patient notes:
+                        </div>
+                        <div className="text-sm text-gray-700 dark:text-gray-300 italic">
+                          {point.patientNarrative}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
 
             {/* Summary */}
             {summary && (
-              <div className="space-y-3">
-                <h3 className="font-medium text-gray-900 dark:text-white">Medical Summary</h3>
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
-                    {summary.summaryText}
-                  </p>
-                </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Medical Summary
+                </h3>
+                <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+                      {summary.summaryText}
+                    </p>
+                  </CardContent>
+                </Card>
 
                 {/* Action buttons */}
-                <div className="flex space-x-2">
-                  <button
-                    onClick={copyToClipboard}
-                    className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                <div className="flex flex-col gap-3">
+                  <Button
+                    onClick={saveSession}
+                    disabled={!summary || isSaving}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
-                    <Copy className="w-4 h-4" />
+                    <Save className="w-4 h-4 mr-2" />
+                    <span>{isSaving ? 'Saving…' : 'Save Session'}</span>
+                  </Button>
+                  <Button variant="outline" onClick={copyToClipboard} className="w-full">
+                    <Copy className="w-4 h-4 mr-2" />
                     <span>Copy</span>
-                  </button>
-                  <button
-                    onClick={downloadSummary}
-                    className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" onClick={downloadSummary} className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
                     <span>Download</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

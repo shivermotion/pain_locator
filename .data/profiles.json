@@ -1,0 +1,25 @@
+{
+  "patient@example.com": {
+    "email": "patient@example.com",
+    "fullName": "",
+    "dateOfBirth": "",
+    "gender": "",
+    "phone": "",
+    "pastConditions": [
+      "asdfadsfasdf"
+    ],
+    "surgeries": [
+      "asdfasdfad"
+    ],
+    "currentMedications": [
+      "asdfasdfads"
+    ],
+    "allergies": [
+      "adfasdfasf"
+    ],
+    "familyHistory": "asdfsdf",
+    "socialHistory": "asdfasdfa",
+    "notes": "asdfasdfasdf",
+    "updatedAt": "2025-08-25T08:16:57.619Z"
+  }
+}

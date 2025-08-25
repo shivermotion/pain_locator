@@ -1,0 +1,15 @@
+[
+  {
+    "userId": "patient@example.com",
+    "vitals": {},
+    "history": {
+      "conditions": [],
+      "medications": [],
+      "allergies": [],
+      "surgeries": [],
+      "immunizations": [],
+      "socialHistory": {}
+    },
+    "updatedAt": 1755960157191
+  }
+]
